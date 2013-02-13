@@ -25,10 +25,15 @@ fi
 if [ $(cat items.dat | grep -c "$code") -ne 0 ]; then
 echo -ne "$amount\t\t" >> shopping.cart;
 cat items.dat | grep -m 1 "$code" >> shopping.cart;
-printf "Subtotal: " >> shopping.cart;
-awk < shopping.cart 'BEGIN {tot=0;} { tot +=  $1 * $3; } END { print tot;}' >> shopping.cart;
 cat shopping.cart;
+subtotal;
 fi
+}
+
+function subtotal(){
+printf "Subtotal: ";
+total=$(awk 'BEGIN {tot=0;} { tot +=  $1 * $3; } END { print tot;}' shopping.cart);
+echo "$total";
 }
 
 function abort(){
@@ -46,10 +51,21 @@ continue
 esac
 }
 
-#function subtotal(){} 
-
 function finalize(){
-echo finalize the transaction
+while true; do
+temp=$(($total-$payment));
+printf "Enter Payment ($temp remaining, blank to abort): "
+read selection;
+case $selection in
+[0-9]*)
+payment+=$selection
+continue
+;;
+'') 
+break
+;;
+esac
+done
 }
 
 echo "$(basename $0), the (bash) Cash Register v0.1";
@@ -59,7 +75,7 @@ printf "Section (h for help)? "
 selection='';
 code='';
 amount='';
-payment='';
+payment=0;
 read selection code;
 case $selection in
 h) printf "\n-= HELP =-
