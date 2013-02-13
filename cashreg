@@ -1,0 +1,105 @@
+#!/bin/bash
+shopt -s extglob
+
+let firstOrder=0; 
+let payment=0;
+let total=0;
+
+if [ $(ls | grep -c 'shopping.cart') -ne 0 ]; then
+rm shopping.cart;
+fi
+
+function order(){
+quantity=1;
+
+if [ "$firstOrder" = "0" ]; then
+touch shopping.cart;
+echo -e "-= SHOPPING CART =- 
+Quantity\tCode\tPrice\tDescription" >> shopping.cart;
+firstOrder=1;
+fi
+
+if [ $(cat items.dat | grep -c "$selection") -ne 0 ]; then
+echo -ne "$quantity\t\t" >> shopping.cart;
+cat items.dat | grep -m 1 "$selection" >> shopping.cart;
+cat shopping.cart;
+fi
+}
+
+function abort(){
+printf "abort Transaction (Yes/No)? ";
+read answer
+case $answer in
+[Yy]es) echo "Transaction has been Aborted "
+rm shopping.cart;
+firstOrder=0;
+continue
+;;
+[Nn]o) echo "Transaction has not been Aborted "
+continue
+;;
+esac
+}
+
+#function subtotal(){} 
+
+function finalize(){
+echo finalize the transaction
+}
+
+echo "(bash) Cash Register v0.1";
+
+while true; do 
+printf "Section (h for help)? "
+selection='';
+code='';
+read selection code;
+case $selection in
+h) printf "\n-= HELP =-
+Listing Items 
+  d\t\tlist by description
+  i\t\tlist by item number
+  p\t\tlist by price
+Transactions
+  [[-]#] ####\tadd[[-]#] items with the specified 4-digit code 
+  a\t\tabort the transaction
+  f\t\tfinalize the transaction
+Other
+  q\t\tquit this script\n"
+continue
+;;
+d) cat items.dat | sort -k3 | less
+continue
+;;
+i) cat items.dat | sort -n -k1 | less
+continue
+;;
+p) cat items.dat | sort -n -k2 | less
+continue
+;;
+[0-9][0-9][0-9][0-9])
+if [ "$code" = '' ]; then
+order
+fi
+continue
+;;
+[0-9]*) 
+if [ "$code" != '']; then
+order
+fi
+continue
+;;
+a) abort
+continue
+;;
+f) finalize
+continue
+;;
+q)
+break
+;;
+*) echo $selection | egrep '([0-9]+)(?: ([0-9]{4}))' 
+esac
+done
+
+exit 0
