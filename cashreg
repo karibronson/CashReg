@@ -47,7 +47,7 @@ function finalize(){
 echo finalize the transaction
 }
 
-echo "(bash) Cash Register v0.1";
+echo "$(basename $0), the (bash) Cash Register v0.1";
 
 while true; do 
 printf "Section (h for help)? "
