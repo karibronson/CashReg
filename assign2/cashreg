@@ -1,6 +1,5 @@
 #!/bin/bash
 shopt -s extglob
-
 let firstOrder=0; 
 let code=0;
 let amount=0;
@@ -58,17 +57,28 @@ function finalize(){
 	printf "Enter Payment (";
        	echo  "$total-$payment" | bc | tr -d '\\\n';
        	printf " remaining, blank to abort): ";
-	read selection;
+       	read selection;
 	case $selection in
 	    [0-9]*)
-		payment+=$selection;
-		continue
+		payment=$(echo "$payment+$selection" | bc);
+		check=$(echo "$payment>=$total" | bc -l);
+       		if [ "$check" -eq 1 ]; then
+		    echo -n "Change: "
+       		    echo  "$payment-$total" | bc ;
+		    pdf()
+		    break
+		fi
+	   	continue
 		;;
 	    '') 
 		break
 		;;
 	esac
     done
+}
+
+function pdf(){
+
 }
 
 echo "$(basename $0), the (bash) Cash Register v0.1";
