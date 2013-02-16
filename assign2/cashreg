@@ -6,11 +6,17 @@ let amount=0;
 let payment=0;
 let total=0;
 
+New process remove shopping cart
 if [ $(ls | grep -c 'shopping.cart') -ne 0 ]; then
     rm shopping.cart;
 fi
 
+###Order
+#takes in a code and quantity, quantity can be negative
+#
+
 function order(){
+#Check if this is the firstOrder
 if [ "$firstOrder" = "0" ]; then
     touch shopping.cart;
     echo -e "-= SHOPPING CART =- 
@@ -29,6 +35,9 @@ fi
     fi
 }
 
+###Subtotal
+#Calculate the total amount of the shopping cart
+#
 function subtotal(){
     printf "Subtotal: ";
     total=$(awk 'BEGIN {tot=0;} { tot +=  $1 * $3; } END { print tot;}' shopping.cart);
@@ -37,6 +46,9 @@ function subtotal(){
  
 }
 
+###abort
+#restart a shopping cart transaction
+#
 function abort(){
     printf "abort Transaction (Yes/No)? ";
     read answer
@@ -52,9 +64,14 @@ function abort(){
     esac
 }
 
+###finalize
+#takes in the total amount of shopping cart
+#minus it by the amount of payment entered
+#If payment is greater than total call pdf
+#
 function finalize(){
     while true; do
-	printf "Enter Payment (";
+        printf "Enter Payment (";
        	echo  "$total-$payment" | bc | tr -d '\\\n';
        	printf " remaining, blank to abort): ";
        	read selection;
@@ -64,21 +81,40 @@ function finalize(){
 		check=$(echo "$payment>=$total" | bc -l);
        		if [ "$check" -eq 1 ]; then
 		    echo -n "Change: "
-       		    echo  "$payment-$total" | bc ;
-		    pdf()
+       		    echo  "$payment-$total" | bc
+		    pdf
 		    break
 		fi
 	   	continue
 		;;
-	    '') 
-		break
+	    '') break
 		;;
 	esac
     done
 }
 
+### PDF
+# reformats shopping cart
+# changes it into a pdf
+#
 function pdf(){
+#deletes any items that have 0 quantities
+touch temp
+sed '/^0/d' shopping.cart > temp; mv temp shopping.cart 
 
+#increase or decrease multiple numbers
+cat shopping.cart | sort -n -k2 > temp; mv temp shopping.cart
+
+#Delete negative numbers
+sed '/^-/d' shopping.cart > temp; mv temp shopping.cart
+
+#reformats, commas, and total
+awk '{print $2,$4,$1,$3,$1*$3; OFS="."}' shopping.cart | sed '1d' | sed '1d'> .receipt
+
+cat .receipt
+
+pdflatex receipt < /dev/null > /dev/null
+#open receipt.pdf
 }
 
 echo "$(basename $0), the (bash) Cash Register v0.1";
